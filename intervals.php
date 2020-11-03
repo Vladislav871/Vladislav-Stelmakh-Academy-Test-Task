@@ -3,7 +3,8 @@
 function intervalConstruction($arr) {
     // Проверка на количество аргументов, переданных в массиве
 
-    if($arr.length > 3) return "Illegal number of elements in input array";
+    if(count($arr) > 3) return "Illegal number of elements in input array";
+    if(strstr($arr[1], 'bb') || strstr($arr[1], '##')) return "Cannot identify the note";
     if($arr[2] == null) $arr[2] = 'asc';
 
     // Допустимые значения интервалов
@@ -43,9 +44,8 @@ function intervalConstruction($arr) {
 
         $foundNote = null;
         $countSemitone = 0;
+        $cycle = false;
         $check = true;
-        $iter = false;
-        $firstHalf = false;
 
         $indexOfNote = findNoteIndex($firstNote);
         $indexOfNote += ($degree-1);
@@ -57,28 +57,28 @@ function intervalConstruction($arr) {
         }
 
         $indexForSem = findNoteIndex($firstNote);
+        $indexFoundNote = findNoteIndex($foundNote);
 
         for($i = $indexForSem; $i <= count($notes); $i++) {
-            if(strstr($firstNote, 'b') && $check) {
+            if(strstr($firstNote, '#') && $check) {
                 $countSemitone++;
                 $check = false;
-            } else if(strstr($firstNote, '#') && $check) {
+                continue;
+            }
+            if(strstr($firstNote, 'b') && $check) {
                 $countSemitone++;
                 $check = false;
             }
             if($i == count($notes)) {
-                $iter = true;
-                for($i = 0; $i < count($notes); $i++) {
-                    if($notes[$i][0] != $foundNote) $countSemitone += $notes[$i][1];
-                    else break;
+                for($i = 0; $i <= count($notes); $i++) {
+                    if($i == $indexFoundNote) break;
+                    else $countSemitone += $notes[$i][1];
                 }
+                $cycle = true;
             }
-            if(strstr($firstNote, 'C')) {
-                $firstHalf = true;
-            }
-            if($iter == true) break;
-            if($i >= $indexOfNote && $firstHalf) break;
-            $countSemitone += $notes[$i][1];
+            if($cycle) break;
+            if($i == $indexFoundNote && $interval != 'P8') break;
+            else $countSemitone += $notes[$i][1];
         }
 
         if($countSemitone == $semitones) {
@@ -99,6 +99,63 @@ function intervalConstruction($arr) {
 
         return $foundNote;
 
+    } else {
+        $foundNote = null;
+        $countSemitone = 0;
+        $cycle = false;
+        $check = true;
+
+        $indexOfNote = findNoteIndex($firstNote);
+        $indexOfNote -= ($degree-1);
+        if($indexOfNote >= 0 && $indexOfNote <= count($notes)) {
+            $foundNote = $notes[$indexOfNote][0];
+        } else {
+            $indexOfNote += count($notes);
+            $foundNote = $notes[$indexOfNote][0];
+        }
+
+        $indexForSem = findNoteIndex($firstNote);
+        $indexFoundNote = findNoteIndex($foundNote);
+
+        for($i = $indexForSem; $i >= 0; $i--) {
+            if(strstr($firstNote, '#') && $check) {
+                $countSemitone++;
+                $check = false;
+                continue;
+            }
+            if(strstr($firstNote, 'b') && $check) {
+                $countSemitone++;
+                $check = false;
+            }
+            if($i == 0) {
+                for($i = count($notes); $i >= 0; $i--) {
+                    if($i == $indexFoundNote) break;
+                    else $countSemitone += $notes[$i-1][1];
+                }
+                $cycle = true;
+            }
+            if($cycle) break;
+            if($i == $indexFoundNote && $interval != 'P8') break;
+            else $countSemitone += $notes[$i-1][1];
+        }
+
+        if($countSemitone == $semitones) {
+            return $foundNote;
+        } else if($countSemitone > $semitones) {
+            if(($countSemitone - $semitones) == 1) {
+                $foundNote = $foundNote.'#';
+            } else {
+                $foundNote = $foundNote.'##';
+            }
+        } else {
+            if(($semitones - $countSemitone) == 1) {
+                $foundNote = $foundNote.'b';
+            } else {
+                $foundNote = $foundNote.'bb';
+            }
+        }
+
+        return $foundNote;
     }
 
 }
